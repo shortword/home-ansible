@@ -1,0 +1,14 @@
+- hosts: all
+  tasks:
+  - name: Update the system packages
+    ansible.builtin.apt: upgrade=dist force_apt_get=yes cache_valid_time=3600
+  - name: Install basic packages
+    ansible.builtin.apt:
+      name:
+      - vim
+      - git
+      - less
+      - build-essential
+      - fail2ban
+      state: latest
+      cache_valid_time: 3600

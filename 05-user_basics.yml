@@ -1,0 +1,132 @@
+- hosts: all
+  tasks:
+  - name: Install ZSH
+    ansible.builtin.apt:
+      name:
+      - zsh
+      - fonts-powerline
+      - tmux
+      state: latest
+      cache_valid_time: 3600
+
+  - name: Create / update user
+    ansible.builtin.user:
+      name: {{ username }}
+      shell: /bin/zsh
+      comment: Added by Ansible
+      uid: 1000
+      group: {{ username }}
+      append: true
+      groups:
+      - {{ username }}
+      - adm
+      - cdrom
+      - sudo
+      - dip
+      - plugdev
+      - lpadmin
+      - lxd
+      - sambashare
+
+  - name: Create user SSH directory
+    ansible.builtin.file:
+      path: {{ homedir }}/.ssh
+      state: directory
+      mode: 0700
+      group: {{ username }}
+      owner: {{ username }}
+
+  - name: Create SSH key
+    remote_user: {{ username }}
+    community.crypto.openssh_keypair:
+      regenerate: never
+      path: {{ homedir }}/.ssh/id_ed25519
+      owner: {{ username }}
+      type: ed25519
+
+  - name: Create home local dir
+    ansible.builtin.file:
+      path: "{{ homedir }}/{{item}}"
+      owner: {{ username }}
+      group: {{ username }}
+      mode: 0755
+      state: directory
+    with_items: ["local", "local/bin", "local/src", "devel"]
+
+  # Run the next block of commands as the user
+  - block:
+    - name: Set git name
+      ansible.builtin.shell:
+        cmd: git config --global user.name "{{ git_name }}"
+
+    - name: Set git email
+      ansible.builtin.shell:
+        cmd: git config --global user.email "{{ git_email }}"
+
+    - name: Check oh-my-zsh existence
+      ansible.builtin.stat:
+        path: {{ homedir }}/.oh-my-zsh
+      register: omz_stat
+
+    - block:
+      - name: Get oh-my-zsh
+        ansible.builtin.get_url:
+          url: https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+          dest: /tmp/oh-my-zsh.sh
+          mode: '0700'
+
+      - name: Install oh-my-zsh
+        ansible.builtin.shell:
+          cmd: /tmp/oh-my-zsh.sh
+
+      - name: Remove OMZ installer
+        ansible.builtin.file:
+          path: /tmp/oh-my-zsh.sh
+          state: absent
+      when: not omz_stat.stat.exists
+
+    - name: Change to agnoster
+      ansible.builtin.lineinfile:
+        path: {{ homedir }}/.zshrc
+        regexp: '^ZSH_THEME'
+        line: ZSH_THEME="agnoster"
+
+    - name: Update path in zshrc
+      ansible.builtin.lineinfile:
+        path: {{ homedir }}/.zshrc
+        line: "export PATH=\"$HOME/local/bin:$HOME/.local/bin:$PATH\""
+        state: present
+
+    - name: Check miniconda
+      ansible.builtin.stat:
+        path: {{ homedir }}/local/miniconda
+      register: conda_stat
+
+    - block:
+      - name: Download miniconda
+        ansible.builtin.get_url:
+          url: https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+          dest: /tmp/miniconda.sh
+          mode: '0700'
+
+      - name: Install miniconda
+        ansible.builtin.shell:
+          cmd: /tmp/miniconda.sh -b -p {{ homedir }}/local/miniconda
+
+      - name: Remove miniconda installer
+        ansible.builtin.file:
+          path: /tmp/miniconda.sh
+          state: absent
+
+      - name: Add miniconda to zshrc
+        ansible.builtin.shell:
+          cmd: conda init zsh
+      when: not conda_stat.stat.exists
+
+    become: yes
+    become_user: {{ username }}
+
+  - name: Install spotify
+    community.general.snap:
+      name: spotify
+

@@ -123,6 +123,12 @@
           cmd: conda init zsh
       when: not conda_stat.stat.exists
 
+    - name: Turn off case sensitive tab completion
+      ansible.builtin.lineinfile:
+        path: {{ homedir }}
+        regexp: 'CASE_SENSITIVE='
+        line: 'CASE_SENSITIVE="true"'
+
     become: yes
     become_user: {{ username }}
 

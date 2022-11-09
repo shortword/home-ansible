@@ -1,0 +1,14 @@
+- hosts: all
+  tasks:
+    - name: Set grub to use last OS booted
+      ansible.builtin.lineinfile:
+        path: /etc/default/grub
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: 'GRUB_DEFAULT=', line: 'GRUB_DEFAULT=saved' }
+        - { regexp: 'GRUB_SAVEDEFAULT=', line: 'GRUB_SAVEDEFAULT=true' }
+
+    - name: Reinstall grub
+      ansible.builtin.shell:
+        cmd: update-grub

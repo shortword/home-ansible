@@ -1,0 +1,6 @@
+- hosts: gui
+  tasks:
+  - name: Install spotify
+    community.general.snap:
+      name: spotify
+

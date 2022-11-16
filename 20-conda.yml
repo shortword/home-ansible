@@ -1,0 +1,30 @@
+- hosts: devel
+  tasks:
+    - name: Check miniconda
+      ansible.builtin.stat:
+        path: {{ homedir }}/local/miniconda
+      register: conda_stat
+
+    - block:
+      - name: Download miniconda
+        ansible.builtin.get_url:
+          url: https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+          dest: /tmp/miniconda.sh
+          mode: '0700'
+
+      - name: Install miniconda
+        ansible.builtin.shell:
+          cmd: /tmp/miniconda.sh -b -p {{ homedir }}/local/miniconda
+
+      - name: Remove miniconda installer
+        ansible.builtin.file:
+          path: /tmp/miniconda.sh
+          state: absent
+
+      - name: Add miniconda to zshrc
+        ansible.builtin.shell:
+          cmd: conda init zsh
+      when: not conda_stat.stat.exists
+
+    become: yes
+    become_user: {{ username }}

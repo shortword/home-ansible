@@ -1,4 +1,4 @@
-- hosts: all
+- hosts: dual-boot
   tasks:
     - name: Set grub to use last OS booted
       ansible.builtin.lineinfile:

@@ -1,0 +1,56 @@
+- hosts: all
+  tasks:
+  # Installing SSH may not matter. If using Ansible remote, it should be.
+  # However, sometimes I'll run these locally so this is there "just in case."
+  - name: Install ssh
+    ansible.builtin.apt:
+      name:
+      - ssh
+      state: latest
+      cache_valid_time: 3600
+
+  - name: Check that port is set
+    ansible.builtin.assert:
+      that:
+        - ssh_port is defined
+        - ssh_port > 0
+        - ssh_port <= 65535
+
+  - name: Set SSH port number
+    ansible.builtin.lineinfile:
+      path: /etc/ssh/sshd_config
+      regexp: '^#?Port [0-9]+$'
+      line: 'Port {{ ssh_port }}'
+
+  - name: Restart SSH
+    ansible.builtin.systemd:
+      state: restarted
+      name: ssh
+
+  - name: Pull SSH keys
+    ansible.builtin.get_url:
+      url: https://github.com/shortword.keys
+      dest: {{ homedir }}/.ssh/github_keys
+      mode: '0600'
+      owner: {{ username }}
+      group: {{ username }}
+
+  - name: Touch authorized keys
+    ansible.builtin.file:
+      path: {{ homedir }}/.ssh/authorized_keys
+      state: touch
+      owner: {{ username }}
+      group: {{ username }}
+      mode: 0600
+
+  - name: Add a line to show where github entries begin
+    ansible.builtin.lineinfile:
+      dest: {{ homedir }}/.ssh/authorized_keys
+      line: "##### Begin GitHub keys #####"
+    register: ssh_github_check
+
+  - name: Append github keys to authorized_keys
+    ansible.builtin.shell:
+      cmd: cat {{ homedir }}/.ssh/github_keys >>{{ homedir }}/.ssh/authorized_keys
+    when: ssh_github_check.changed
+

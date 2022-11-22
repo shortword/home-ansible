@@ -1,0 +1,13 @@
+# Reference: https://github.com/marketplace/actions/ansible-lint
+name: Ansible Lint
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Lint the project
+        uses: ansible-community/ansible-lint-action@main

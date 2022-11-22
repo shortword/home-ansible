@@ -5,7 +5,10 @@
         path: {{ homedir }}/local/miniconda
       register: conda_stat
 
+    # Block to become user
     - block:
+
+      # Block for actual conda install
       - block:
         - name: Download miniconda
           ansible.builtin.get_url:
@@ -27,6 +30,7 @@
             cmd: conda init zsh
 
         when: not conda_stat.stat.exists
+        # End conda install portion; still operating as the user
 
       - name: Pull Conda autocomplete
         ansible.builtin.git:

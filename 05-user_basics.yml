@@ -11,106 +11,118 @@
   - name: Install ZSH
     ansible.builtin.apt:
       name:
-      - zsh
-      - fonts-powerline
-      - tmux
-      state: latest
+        - zsh
+        - fonts-powerline
+        - tmux
+      state: latest # noqa package-latest
       cache_valid_time: 3600
 
   - name: Create / update user
     ansible.builtin.user:
-      name: {{ username }}
+      name: "{{ username }}"
       shell: /bin/zsh
       comment: Added by Ansible
       uid: 1000
-      group: {{ username }}
+      group: "{{ username }}"
       append: true
       groups:
-      - {{ username }}
-      - adm
-      - cdrom
-      - sudo
-      - dip
-      - plugdev
-      - lpadmin
-      - lxd
-      - sambashare
+        - adm
+        - cdrom
+        - sudo
+        - dip
+        - plugdev
+        - lpadmin
+        - lxd
+        - sambashare
 
   - name: Create user SSH directory
     ansible.builtin.file:
-      path: {{ homedir }}/.ssh
+      path: "{{ homedir }}/.ssh"
       state: directory
       mode: 0700
-      group: {{ username }}
-      owner: {{ username }}
+      group: "{{ username }}"
+      owner: "{{ username }}"
 
   - name: Create SSH key
-    remote_user: {{ username }}
+    remote_user: "{{ username }}"
     community.crypto.openssh_keypair:
       regenerate: never
-      path: {{ homedir }}/.ssh/id_ed25519
-      owner: {{ username }}
+      path: "{{ homedir }}/.ssh/id_ed25519"
+      owner: "{{ username }}"
       type: ed25519
 
   - name: Create home local dir
     ansible.builtin.file:
-      path: "{{ homedir }}/{{item}}"
-      owner: {{ username }}
-      group: {{ username }}
+      path: "{{ homedir }}/{{ item }}"
+      owner: "{{ username }}"
+      group: "{{ username }}"
       mode: 0755
       state: directory
     with_items: ["local", "local/bin", "local/src", "devel"]
 
-  # Run the next block of commands as the user
-  - block:
-    - name: Set git name
-      ansible.builtin.shell:
-        cmd: git config --global user.name "{{ git_name }}"
+    # Run the next block of commands as the user
+  - name: Run set of commands as the user
+    block:
+      - name: Set git name
+        ansible.builtin.git_config:
+          scope: global
+          name: user.name
+          value: "{{ git_name }}"
 
-    - name: Set git email
-      ansible.builtin.shell:
-        cmd: git config --global user.email "{{ git_email }}"
+      - name: Set git email
+        ansible.builtin.git_config:
+          scope: global
+          name: user.email
+          value: "{{ git_email }}"
 
-    - name: Check oh-my-zsh existence
-      ansible.builtin.stat:
-        path: {{ homedir }}/.oh-my-zsh
-      register: omz_stat
+      - name: Set git editor
+        ansible.builtin.git_config:
+          scope: global
+          name: core.editor
+          value: "vim"
 
-    - block:
-      - name: Get oh-my-zsh
-        ansible.builtin.get_url:
-          url: https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh
-          dest: /tmp/oh-my-zsh.sh
-          mode: '0700'
+      - name: Check oh-my-zsh existence
+        ansible.builtin.stat:
+          path: "{{ homedir }}/.oh-my-zsh"
+        register: omz_stat
 
-      - name: Install oh-my-zsh
-        ansible.builtin.shell:
-          cmd: /tmp/oh-my-zsh.sh
+      - name: Run commands when ZSH not installed yet
+        block:
+          - name: Get oh-my-zsh
+            ansible.builtin.get_url:
+              url: https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+              dest: /tmp/oh-my-zsh.sh
+              mode: '0700'
+            register: omz_dl
 
-      - name: Remove OMZ installer
-        ansible.builtin.file:
-          path: /tmp/oh-my-zsh.sh
-          state: absent
-      when: not omz_stat.stat.exists
+          - name: Install oh-my-zsh # noqa no-changed-when
+            ansible.builtin.command: /bin/sh /tmp/oh-my-zsh.sh
+            when: omz_dl.status_code == 200
 
-    - name: Change to agnoster
-      ansible.builtin.lineinfile:
-        path: {{ homedir }}/.zshrc
-        regexp: '^ZSH_THEME'
-        line: ZSH_THEME="agnoster"
+          - name: Remove OMZ installer
+            ansible.builtin.file:
+              path: /tmp/oh-my-zsh.sh
+              state: absent
+            when: omz_dl.status_code = 200
+        when: not omz_stat.stat.exists
 
-    - name: Update path in zshrc
-      ansible.builtin.lineinfile:
-        path: {{ homedir }}/.zshrc
-        line: "export PATH=\"$HOME/local/bin:$HOME/.local/bin:$PATH\""
-        state: present
+      - name: Change to agnoster
+        ansible.builtin.lineinfile:
+          path: "{{ homedir }}/.zshrc"
+          regexp: '^ZSH_THEME'
+          line: ZSH_THEME="agnoster"
 
-    - name: Turn off case sensitive tab completion
-      ansible.builtin.lineinfile:
-        path: {{ homedir }}
-        regexp: 'CASE_SENSITIVE='
-        line: 'CASE_SENSITIVE="true"'
+      - name: Update path in zshrc
+        ansible.builtin.lineinfile:
+          path: "{{ homedir }}/.zshrc"
+          line: "export PATH=\"$HOME/local/bin:$HOME/.local/bin:$PATH\""
+          state: present
 
-    become: yes
-    become_user: {{ username }}
+      - name: Turn off case sensitive tab completion
+        ansible.builtin.lineinfile:
+          path: "{{ homedir }}/.zshrc"
+          regexp: 'CASE_SENSITIVE='
+          line: 'CASE_SENSITIVE="true"'
 
+    become: true
+    become_user: "{{ username }}"

@@ -6,54 +6,60 @@
         - username is defined
         - homedir is defined
 
-    - name: Check miniconda
-      ansible.builtin.stat:
-        path: {{ homedir }}/local/miniconda
-      register: conda_stat
+  - name: Check miniconda
+    ansible.builtin.stat:
+      path: "{{ homedir }}/local/miniconda"
+    register: conda_stat
 
     # Block to become user
-    - block:
+  - name: Become the user
+    block:
 
       # Block for actual conda install
-      - block:
-        - name: Download miniconda
-          ansible.builtin.get_url:
-            url: https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-            dest: /tmp/miniconda.sh
-            mode: '0700'
+      - name: Conda install block
+        block:
 
-        - name: Install miniconda
-          ansible.builtin.shell:
-            cmd: /tmp/miniconda.sh -b -p {{ homedir }}/local/miniconda
+          - name: Download miniconda
+            ansible.builtin.get_url:
+              url: https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+              dest: /tmp/miniconda.sh
+              mode: '0700'
+            register: mc_dl
 
-        - name: Remove miniconda installer
-          ansible.builtin.file:
-            path: /tmp/miniconda.sh
-            state: absent
+          - name: Install miniconda
+            ansible.builtin.command: /tmp/miniconda.sh -b -p "{{ homedir }}/local/miniconda"
+            when: mc_dl.status_code == 200
+            register: mc_inst
 
-        - name: Add miniconda to zshrc
-          ansible.builtin.shell:
-            cmd: conda init zsh
+          - name: Remove miniconda installer
+            ansible.builtin.file:
+              path: /tmp/miniconda.sh
+              state: absent
+            when: mc_dl.status_code == 200
+
+          - name: Add miniconda to zshrc
+            ansible.builtin.command: "{{ homedir }}/local/miniconda/bin/conda init zsh"
+            when: mc_inst.rc == 200
 
         when: not conda_stat.stat.exists
         # End conda install portion; still operating as the user
 
       - name: Pull Conda autocomplete
-        ansible.builtin.git:
+        ansible.builtin.git: # noqa git-latest
           repo: https://github.com/esc/conda-zsh-completion
-          dest: {{ homedir }}/local/src/conda-zsh-completion
+          dest: "{{ homedir }}/local/src/conda-zsh-completion"
 
       - name: Add autocomplete to zsh - part 1
         ansible.builtin.lineinfile:
-          dest: {{ homedir }}/.zshrc
+          dest: "{{ homedir }}/.zshrc"
           insertbefore: "^source \\$ZSH/oh-my-zsh.sh$"
           line: "fpath+={{ homedir }}/local/src/conda-zsh-completion"
 
       - name: Add autocomplete to zsh - part 2
         ansible.builtin.lineinfile:
-          dest: {{ homedir }}/.zshrc
+          dest: "{{ homedir }}/.zshrc"
           insertafter: "^source \\$ZSH/oh-my-zsh.sh$"
           line: "compinit conda"
 
-      become: yes
-      become_user: {{ username }}
+    become: true
+    become_user: "{{ username }}"

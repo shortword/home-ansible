@@ -11,8 +11,8 @@
   - name: Install ssh
     ansible.builtin.apt:
       name:
-      - ssh
-      state: latest
+        - ssh
+      state: latest # noqa package-latest
       cache_valid_time: 3600
 
   - name: Check that port is set
@@ -36,27 +36,26 @@
   - name: Pull SSH keys
     ansible.builtin.get_url:
       url: https://github.com/shortword.keys
-      dest: {{ homedir }}/.ssh/github_keys
+      dest: "{{ homedir }}/.ssh/github_keys"
       mode: '0600'
-      owner: {{ username }}
-      group: {{ username }}
+      owner: "{{ username }}"
+      group: "{{ username }}"
 
   - name: Touch authorized keys
     ansible.builtin.file:
-      path: {{ homedir }}/.ssh/authorized_keys
+      path: "{{ homedir }}/.ssh/authorized_keys"
       state: touch
-      owner: {{ username }}
-      group: {{ username }}
+      owner: "{{ username }}"
+      group: "{{ username }}"
       mode: 0600
 
   - name: Add a line to show where github entries begin
     ansible.builtin.lineinfile:
-      dest: {{ homedir }}/.ssh/authorized_keys
+      dest: "{{ homedir }}/.ssh/authorized_keys"
       line: "##### Begin GitHub keys #####"
     register: ssh_github_check
 
-  - name: Append github keys to authorized_keys
+  - name: Append github keys to authorized_keys # noqa no-handler
     ansible.builtin.shell:
-      cmd: cat {{ homedir }}/.ssh/github_keys >>{{ homedir }}/.ssh/authorized_keys
+      cmd: cat "{{ homedir }}/.ssh/github_keys" >>"{{ homedir }}/.ssh/authorized_keys"
     when: ssh_github_check.changed
-

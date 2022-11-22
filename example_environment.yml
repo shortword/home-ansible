@@ -3,4 +3,3 @@ homedir: /home/{{ username }}
 git_name: "YOUR NAME HERE"
 git_email: "your@email.here"
 ssh_port: 12345
-

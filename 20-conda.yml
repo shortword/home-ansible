@@ -1,5 +1,11 @@
 - hosts: all
   tasks:
+  - name: Check variables
+    ansible.builtin.assert:
+      that:
+        - username is defined
+        - homedir is defined
+
     - name: Check miniconda
       ansible.builtin.stat:
         path: {{ homedir }}/local/miniconda

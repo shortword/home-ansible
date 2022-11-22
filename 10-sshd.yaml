@@ -1,5 +1,11 @@
 - hosts: all
   tasks:
+  - name: Check variables
+    ansible.builtin.assert:
+      that:
+        - username is defined
+        - homedir is defined
+
   # Installing SSH may not matter. If using Ansible remote, it should be.
   # However, sometimes I'll run these locally so this is there "just in case."
   - name: Install ssh

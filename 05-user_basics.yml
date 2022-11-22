@@ -1,5 +1,13 @@
 - hosts: all
   tasks:
+  - name: Check variables
+    ansible.builtin.assert:
+      that:
+        - username is defined
+        - homedir is defined
+        - git_name is defined
+        - git_email is defined
+
   - name: Install ZSH
     ansible.builtin.apt:
       name:

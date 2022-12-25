@@ -36,7 +36,7 @@
 
   - name: Pull SSH keys
     ansible.builtin.get_url:
-      url: https://github.com/shortword.keys
+      url: "{{ ssh_key_url }}"
       dest: "{{ homedir }}/.ssh/github_keys"
       mode: '0600'
       owner: "{{ username }}"

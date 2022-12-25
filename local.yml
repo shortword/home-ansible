@@ -1,0 +1,50 @@
+---
+- hosts: all
+  tags: always
+  become: true
+
+  pre_tasks:
+    # FIXME: We only support debian based distributions for now
+    - name: Check distro
+      tags: always
+      assert:
+        that:
+          - ansible_distribution is ["Debian", "Ubuntu"]
+
+    - name: Update base OS
+      tags: always
+      apt: upgrade=dist force_apt_get=yes cache_valid_time=3600
+      changed_when: false
+
+# Roles
+- hosts: all
+  tags: base
+  become: true
+  roles:
+    - base
+
+- hosts: dualboot
+  tags: dualboot
+  become: true
+  roles:
+    - dualboot
+
+- hosts: gui
+  tags: gui
+  become: true
+  roles:
+    - gui
+
+- hosts: server
+  tags: server
+  become: true
+  roles:
+    - server
+
+- hosts: devel
+  tags: devel
+  become: true
+  roles:
+    - devel
+
+# vim: ft=ansible

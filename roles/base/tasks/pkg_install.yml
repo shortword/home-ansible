@@ -1,0 +1,10 @@
+---
+- name: Install basic packages
+  ansible.builtin.apt:
+    name:
+      - vim
+      - git
+      - less
+      - build-essential
+    state: latest   # noqa package-latest
+    cache_valid_time: 3600

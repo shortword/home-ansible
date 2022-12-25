@@ -1,0 +1,7 @@
+---
+- name: Server setup
+  block:
+  - name: Import fail2ban
+    ansible.builtin.import_tasks: fail2ban.yml
+  - name: Import sshd
+    ansible.builtin.import_tasks: sshd.yml

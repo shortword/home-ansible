@@ -1,5 +1,6 @@
-- hosts: gui
-  tasks:
+---
+- name: Install GUI programs
+  block:
   - name: Install spotify
     community.general.snap:
       name: spotify

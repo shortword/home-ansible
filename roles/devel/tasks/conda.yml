@@ -1,5 +1,6 @@
-- hosts: all
-  tasks:
+---
+- name: Install conda
+  block:
   - name: Check variables
     ansible.builtin.assert:
       that:
@@ -13,21 +14,26 @@
 
     # Block to become user
   - name: Become the user
+    become: true
+    become_user: "{{ username }}"
     block:
 
       # Block for actual conda install
       - name: Conda install block
+        when: not conda_stat.stat.exists
         block:
 
           - name: Download miniconda
             ansible.builtin.get_url:
-              url: https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+              url: "https://repo.anaconda.com/miniconda/\
+                    Miniconda3-latest-Linux-x86_64.sh"
               dest: /tmp/miniconda.sh
               mode: '0700'
             register: mc_dl
 
           - name: Install miniconda
-            ansible.builtin.command: /tmp/miniconda.sh -b -p "{{ homedir }}/local/miniconda"
+            ansible.builtin.command: >
+              /tmp/miniconda.sh -b -p "{{ homedir }}/local/miniconda"
             when: mc_dl.status_code == 200
             register: mc_inst
 
@@ -38,14 +44,12 @@
             when: mc_dl.status_code == 200
 
           - name: Add miniconda to zshrc
-            ansible.builtin.command: "{{ homedir }}/local/miniconda/bin/conda init zsh"
+            ansible.builtin.command: >
+              "{{ homedir }}/local/miniconda/bin/conda init zsh"
             when: mc_inst.rc == 200
 
-        when: not conda_stat.stat.exists
-        # End conda install portion; still operating as the user
-
       - name: Pull Conda autocomplete
-        ansible.builtin.git: # noqa git-latest
+        ansible.builtin.git:    # noqa latest[git]
           repo: https://github.com/esc/conda-zsh-completion
           dest: "{{ homedir }}/local/src/conda-zsh-completion"
 
@@ -60,6 +64,3 @@
           dest: "{{ homedir }}/.zshrc"
           insertafter: "^source \\$ZSH/oh-my-zsh.sh$"
           line: "compinit conda"
-
-    become: true
-    become_user: "{{ username }}"

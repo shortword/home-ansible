@@ -1,21 +1,22 @@
-- hosts: dual-boot
-  tasks:
+---
+- name: Setup dualboot to boot last OS
+  block:
     - name: Set grub to use last OS booted - DEFAULT
       ansible.builtin.lineinfile:
         path: /etc/default/grub
         regexp: "GRUB_DEFAULT="
         line: "GRUB_DEFAULT=saved"
-        register: grub_default
+      register: grub_default
 
     - name: Set grub to use last OS booted - SAVEDEFAULT
       ansible.builtin.lineinfile:
         path: /etc/default/grub
         regexp: "GRUB_SAVEDEFAULT="
         line: "GRUB_SAVEDEFAULT=true"
-        register: grub_savedefault
+      register: grub_savedefault
 
     # TODO: Maybe this should be a handler. Not used very often so not worrying
     #       about it now.
-    - name: Reinstall grub # noqa no-handler
-      ansible.builtin.command: /usr/sbin/update-grub # noqa no-changed-when
+    - name: Reinstall grub    # noqa no-handler
+      ansible.builtin.command: /usr/sbin/update-grub    # noqa no-changed-when
       when: grub_default.changed or grub_savedefault.changed

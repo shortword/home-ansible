@@ -1,0 +1,9 @@
+---
+- name: Base system setup
+  block:
+  - name: Import basline package install tasks
+    ansible.builtin.import_tasks: pkg_install.yml
+  - name: Import user setup tasks
+    ansible.builtin.import_tasks: user_setup.yml
+  - name: Import unattended upgrade tasks
+    ansible.builtin.import_tasks: unattended_upgrades.yml

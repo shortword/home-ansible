@@ -1,5 +1,6 @@
-- hosts: all
-  tasks:
+---
+- name: Setup user
+  block:
   - name: Check variables
     ansible.builtin.assert:
       that:
@@ -14,7 +15,7 @@
         - zsh
         - fonts-powerline
         - tmux
-      state: latest # noqa package-latest
+      state: latest   # noqa package-latest
       cache_valid_time: 3600
 
   - name: Create / update user
@@ -62,21 +63,23 @@
 
     # Run the next block of commands as the user
   - name: Run set of commands as the user
+    become: true
+    become_user: "{{ username }}"
     block:
       - name: Set git name
-        ansible.builtin.git_config:
+        community.general.git_config:
           scope: global
           name: user.name
           value: "{{ git_name }}"
 
       - name: Set git email
-        ansible.builtin.git_config:
+        community.general.git_config:
           scope: global
           name: user.email
           value: "{{ git_email }}"
 
       - name: Set git editor
-        ansible.builtin.git_config:
+        community.general.git_config:
           scope: global
           name: core.editor
           value: "vim"
@@ -87,15 +90,17 @@
         register: omz_stat
 
       - name: Run commands when ZSH not installed yet
+        when: not omz_stat.stat.exists
         block:
           - name: Get oh-my-zsh
             ansible.builtin.get_url:
-              url: https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+              url: "https://raw.github.com/ohmyzsh/ohmyzsh/master/\
+                   tools/install.sh"
               dest: /tmp/oh-my-zsh.sh
               mode: '0700'
             register: omz_dl
 
-          - name: Install oh-my-zsh # noqa no-changed-when
+          - name: Install oh-my-zsh   # noqa no-changed-when
             ansible.builtin.command: /bin/sh /tmp/oh-my-zsh.sh
             when: omz_dl.status_code == 200
 
@@ -104,7 +109,6 @@
               path: /tmp/oh-my-zsh.sh
               state: absent
             when: omz_dl.status_code = 200
-        when: not omz_stat.stat.exists
 
       - name: Change to agnoster
         ansible.builtin.lineinfile:
@@ -123,6 +127,3 @@
           path: "{{ homedir }}/.zshrc"
           regexp: 'CASE_SENSITIVE='
           line: 'CASE_SENSITIVE="true"'
-
-    become: true
-    become_user: "{{ username }}"

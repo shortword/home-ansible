@@ -1,0 +1,5 @@
+---
+- name: Development system setup
+  block:
+  - name: Import conda tasks
+    ansible.builtin.import_tasks: conda.yml

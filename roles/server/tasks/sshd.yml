@@ -1,5 +1,6 @@
-- hosts: all
-  tasks:
+---
+- name: Setup SSH server
+  block:
   - name: Check variables
     ansible.builtin.assert:
       that:
@@ -12,7 +13,7 @@
     ansible.builtin.apt:
       name:
         - ssh
-      state: latest # noqa package-latest
+      state: latest   # noqa package-latest
       cache_valid_time: 3600
 
   - name: Check that port is set
@@ -55,7 +56,9 @@
       line: "##### Begin GitHub keys #####"
     register: ssh_github_check
 
-  - name: Append github keys to authorized_keys # noqa no-handler
+  - name: Append github keys to authorized_keys   # noqa no-handler
     ansible.builtin.shell:
-      cmd: cat "{{ homedir }}/.ssh/github_keys" >>"{{ homedir }}/.ssh/authorized_keys"
+      cmd: >
+        cat "{{ homedir }}/.ssh/github_keys"
+        >>"{{ homedir }}/.ssh/authorized_keys"
     when: ssh_github_check.changed

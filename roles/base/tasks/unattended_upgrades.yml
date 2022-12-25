@@ -1,0 +1,22 @@
+---
+- name: Setup unattended security updates
+  block:
+  - name: Install unattended upgrades package
+    ansible.builtin.apt:
+      name:
+        - unattended-upgrades
+      state: latest   # noqa package-latest
+      cache_valid_time: 3600
+
+  - name: Update configuration for unattended upgrades
+    ansible.builtin.lineinfile:
+      dest: /etc/apt/apt.conf.d/50unattended-upgrades
+      regexp: "{{ item.regexp }}"
+      line: "{{ item.line }}"
+    loop:
+      - {regexp: '^//Unattended-Upgrade::Automatic-Reboot "false";',
+         line: 'Unattended-Upgrade::Automatic-Reboot "true";'}
+      - {regexp: '^//Unattended-Upgrade::Automatic-Reboot-WithUsers "true";',
+         line: 'Unattended-Upgrade::Automatic-Reboot-WithUsers "true";'}
+      - {regexp: '^//Unattended-Upgrade::Automatic-Reboot-Time "04:37";',
+         line: 'Unattended-Upgrade::Automatic-Reboot-Time "02:00";'}

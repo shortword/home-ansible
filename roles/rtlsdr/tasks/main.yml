@@ -1,5 +1,5 @@
 ---
-- name: RTL-SDR Drive Setup
+- name: RTL-SDR Driver Setup
   block:
   - name: Install Baseline Packages
     ansible.builtin.apt:
@@ -15,7 +15,6 @@
       path: /opt
       state: directory
       mode: 0755
-
 
   - name: Checkout RTL-SDR Source
     ansible.builtin.git:    # noqa latest[git]

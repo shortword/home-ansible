@@ -22,7 +22,7 @@
     ansible.builtin.user:
       name: "{{ username }}"
       shell: /bin/zsh
-      comment: Added by Ansible
+      comment: "{{ username }}"
       uid: 1000
       group: "{{ username }}"
       append: true
@@ -32,8 +32,6 @@
         - sudo
         - dip
         - plugdev
-        - lpadmin
-        - lxd
 
   - name: Create user SSH directory
     ansible.builtin.file:

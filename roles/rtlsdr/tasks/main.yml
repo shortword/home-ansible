@@ -16,14 +16,22 @@
       path: /opt
       state: directory
       mode: 0755
-      owner: "{{ username }}"
-      group: "{{ username }}"
+      owner: root
+      group: root
 
   - name: Checkout RTL-SDR Source
+    become: true
     ansible.builtin.git:    # noqa latest[git]
       repo: "git://git.osmocom.org/rtl-sdr.git"
       dest: "/opt/rtl-sdr"
     register: rtlsdr_git
+
+  - name: Change source dir to the user
+    become: true
+    ansible.builtin.file:
+      path: "/opt/rtl-sdr"
+      owner: "{{ username }}"
+      group: "{{ username }}"
 
   - name: Build and install RTL-SDR (block)
     when: rtlsdr_git.changed

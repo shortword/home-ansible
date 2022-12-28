@@ -47,4 +47,9 @@
   roles:
     - devel
 
+- hosts: rtlsdr
+  tags: rtlsdr
+  roles:
+    - rtlsdr
+
 # vim: ft=ansible

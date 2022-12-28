@@ -1,6 +1,0 @@
-username: YOUR_USERNAME_HERE
-homedir: /home/{{ username }}
-git_name: "YOUR NAME HERE"
-git_email: "your@email.here"
-ssh_port: 12345
-ssh_key_url: URL_TO_YOUR_SSH_PUBLIC_KEYS_HERE

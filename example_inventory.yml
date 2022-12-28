@@ -1,0 +1,22 @@
+---
+all:
+  vars:
+    username: YOUR_USERNAME_HERE
+    homedir: /home/{{ username }}
+    git_name: "YOUR FULL NAME"
+    git_email: "YOUR EMAIL"
+    ssh_port: 12345
+    ssh_key_url: URL://TO.YOUR/KEYS
+  children:
+    host1:
+      roles:
+        - base
+        - devel
+        - server
+    host2:
+      roles:
+        - base
+        - devel
+        - dualboot
+        - gui
+        - server

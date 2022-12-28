@@ -1,0 +1,72 @@
+---
+- name: RTL-SDR Drive Setup
+  block:
+  - name: Install Baseline Packages
+    ansible.builtin.apt:
+      name:
+        - build-essential
+        - cmake
+        - libusb-1.0-0-dev
+
+  # TODO: Pull /opt creation into a reusable task
+  - name: Create opt if it doesn't exist
+    become: true
+    ansible.builtin.file:
+      path: /opt
+      state: directory
+      mode: 0755
+
+
+  - name: Checkout RTL-SDR Source
+    ansible.builtin.git:    # noqa latest[git]
+      repo: "git://git.osmocom.org/rtl-sdr.git"
+      dest: "/opt/rtl-sdr"
+    register: rtlsdr_git
+
+  - name: Build and install RTL-SDR (block)
+    when: rtlsdr_git.changed
+    block:
+
+      - name: Create results / build dir
+        ansible.builtin.file:
+          path: "/opt/rtl-sdr/build"
+          state: directory
+          mode: 0755
+
+      - name: Build RTL-SDR (CMake)
+        become: false
+        when: rtlsdr_git.changed
+        ansible.builtin.shell:
+          chdir: "/opt/rtl-sdr/build"
+          cmd: >
+            cmake
+            ../
+            -DINSTALL_UDEV_RULES=ON
+
+      - name: Build RTL-SDR (source code)
+        become: false
+        when: rtlsdr_git.changed
+        community.general.make:
+          chdir: "/opt/rtl-sdr/build"
+
+      - name: Install RTL-SDR
+        become: true
+        when: rtlsdr_git.changed
+        community.general.make:
+          chdir: "/opt/rtl-sdr/build"
+          target: install
+
+      - name: Run ldconfig
+        become: true
+        when: rtlsdr_git.changed
+        ansible.builtin.command:
+          cmd: ldconfig
+
+  - name: Copy modprobe blacklist
+    become: true
+    ansible.builtin.copy:
+      src: blacklist-rtlsdr.conf
+      dest: /etc/modprobe.d/blacklist-rtlsdr.conf
+      owner: root
+      group: root
+      mode: 0600

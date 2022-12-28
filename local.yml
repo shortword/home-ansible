@@ -9,7 +9,7 @@
       tags: always
       assert:
         that:
-          - ansible_distribution is ["Debian", "Ubuntu"]
+          - ansible_distribution in ["Debian", "Ubuntu"]
 
     - name: Update base OS
       tags: always

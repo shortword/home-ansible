@@ -105,7 +105,7 @@
             ansible.builtin.file:
               path: /tmp/oh-my-zsh.sh
               state: absent
-            when: omz_dl.status_code = 200
+            when: omz_dl.status_code == 200
 
       - name: Change to agnoster
         ansible.builtin.lineinfile:

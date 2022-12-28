@@ -34,7 +34,6 @@
         - plugdev
         - lpadmin
         - lxd
-        - sambashare
 
   - name: Create user SSH directory
     ansible.builtin.file:

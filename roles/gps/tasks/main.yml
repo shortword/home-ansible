@@ -1,0 +1,85 @@
+---
+- name: GPS block
+  block:
+
+  - name: Install GPS / PPS packages
+    become: true
+    ansible.builtin.apt:
+      name:
+        - gpsd
+        - gpsd-clients
+        - pps-tools
+        - ntp
+      state: latest     # noqa package-latest
+
+  # TODO: Only works on Raspberry Pi / Raspbian
+  - name: Check if /boot/config.txt exists
+    ansible.builtin.stat:
+      path: "/boot/config.txt"
+    register: bootcfg
+
+  - name: Modify boot config
+    become: true
+    when: bootcfg.stat.exists
+    ansible.builtin.lineinfile:
+      path: "/boot/config.txt"
+      line: "{{ item.line }}"
+    loop:
+      - {line: "dtoverlay=disable-bt"}
+      - {line: "dtoverlay=pps-gpio,gpiopin=18"}
+      - {line: "enable_uart=1"}
+      - {line: "init_uart_baud=9600"}
+
+  - name: Disable BT
+    become: true
+    when: bootcfg.stat.exists
+    ansible.builtin.systemd:
+      name: hciuart
+      state: stopped
+      enabled: false
+
+  - name: Modify /etc/modules
+    become: true
+    when: bootcfg.stat.exists
+    ansible.builtin.lineinfile:
+      path: "/etc/modules"
+      line: "pps-gpio"
+
+  - name: Remove serial console
+    become: true
+    when: bootcfg.stat.exists
+    ansible.builtin.lineinfile:
+      path: "/boot/cmdline.txt"
+      regexp: '^console=[^ ] (.*)$'
+      line: '\1'
+
+  - name: Setup GPSd config
+    become: true
+    ansible.builtin.lineinfile:
+      path: "/etc/default/gpsd"
+      regexp: "{{ item.line }}"
+      line: "{{ item.regexp }}"
+    loop:
+      - {regexp: "^DEVICES=", line: 'DEVICES="/dev/ttyS0 /dev/pps0"'}
+      - {regexp: "^GPSD_OPTIONS=", line: 'GPSD_OPTIONS="-n"'}
+      - {regexp: "^GPSD_SOCKET=", line: 'GPSD_SOCKET="/var/run/gpsd.sock"'}
+      - {regexp: "^USBAUTO=", line: 'USBAUTO="false"'}
+
+  # TODO: Support configuring the LAN address
+  - name: Allow ntpq from local lan
+    become: true
+    ansible.builtin.lineinfile:
+      path: "/etc/ntp.conf"
+      line: "restrict 10.26.0.0 mask 255.255.0.0"
+
+  - name: Add PPS / GPS to NTP
+    become: true
+    ansible.builtin.blockinfile:
+      path: "/etc/ntp.conf"
+      block: |
+        # Kernel-mode PPS reference-clock for the precise seconds
+        server 127.127.22.0 minpoll 4 maxpoll 4
+        fudge 127.127.22.0 refid kPPS
+        # Coarse time reference-clock - nearest second
+        server 127.127.28.0 minpoll 4 maxpoll 4 iburst prefer
+        fudge 127.127.28.0 time1 +0.105 flag1 1 refid GPSD stratum 1

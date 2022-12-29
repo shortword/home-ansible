@@ -52,4 +52,9 @@
   roles:
     - rtlsdr
 
+- hosts: gps
+  tags: gps
+  roles:
+    - gps
+
 # vim: ft=ansible

@@ -57,8 +57,8 @@
     become: true
     ansible.builtin.lineinfile:
       path: "/etc/default/gpsd"
-      regexp: "{{ item.line }}"
-      line: "{{ item.regexp }}"
+      regexp: "{{ item.regexp }}"
+      line: "{{ item.line }}"
     loop:
       - {regexp: "^DEVICES=", line: 'DEVICES="/dev/ttyS0 /dev/pps0"'}
       - {regexp: "^GPSD_OPTIONS=", line: 'GPSD_OPTIONS="-n"'}

@@ -26,3 +26,8 @@
       mode: 0644
       line: "{{ item.point }}    {{ item.server }}:{{ item.volume }}"
     loop: "{{ nfs_mounts }}"
+
+  - name: Restart autofs
+    ansible.builtin.systemd:
+      state: restarted
+      name: autofs

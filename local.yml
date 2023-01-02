@@ -57,4 +57,9 @@
   roles:
     - gps
 
+- hosts: nfs
+  tags: nfs
+  roles:
+    - nfs
+
 # vim: ft=ansible

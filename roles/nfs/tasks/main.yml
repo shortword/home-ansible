@@ -17,10 +17,12 @@
       group: root
       mode: 0644
 
-  - name: Install auto.nfs
-    ansible.builtin.template:
-      src: auto.nfs.j2
-      dest: /etc/auto.nfs
+  - name: Add NFS lines to auto.nfs
+    ansible.builtin.lineinfile:
+      path: /etc/auto.nfs
+      create: true
       owner: root
       group: root
       mode: 0644
+      line: "{{ item.point }}    {{ server }}:{{ volume }}"
+    loop: "{{ nfs_mounts }}"

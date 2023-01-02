@@ -1,0 +1,26 @@
+---
+- name: Setup NFS
+  block:
+
+  - name: Install NFS client software
+    ansible.builtin.apt:
+      name:
+        - nfs-common
+        - autofs
+      state: latest   # noqa package-latest
+
+  - name: Install backup.autofs
+    ansible.builtin.template:
+      src: backup.autofs
+      dest: /etc/auto.master.d/backup.autofs
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: Install auto.nfs
+    ansible.builtin.template:
+      src: auto.nfs.j2
+      dest: /etc/auto.nfs
+      owner: root
+      group: root
+      mode: 0644

@@ -10,7 +10,7 @@
       state: latest   # noqa package-latest
 
   - name: Install backup.autofs
-    ansible.builtin.template:
+    ansible.builtin.copy:
       src: backup.autofs
       dest: /etc/auto.master.d/backup.autofs
       owner: root

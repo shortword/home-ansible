@@ -60,7 +60,7 @@
       regexp: "{{ item.regexp }}"
       line: "{{ item.line }}"
     loop:
-      - {regexp: "^DEVICES=", line: 'DEVICES="/dev/ttyS0 /dev/pps0"'}
+      - {regexp: "^DEVICES=", line: 'DEVICES="/dev/ttyS0"'}
       - {regexp: "^GPSD_OPTIONS=", line: 'GPSD_OPTIONS="-n"'}
       - {regexp: "^GPSD_SOCKET=", line: 'GPSD_SOCKET="/var/run/gpsd.sock"'}
       - {regexp: "^USBAUTO=", line: 'USBAUTO="false"'}

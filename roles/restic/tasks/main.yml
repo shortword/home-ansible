@@ -1,0 +1,101 @@
+---
+- name: Installing restic
+  block:
+
+  # TODO: Someday, I might have Hashicorp Vault or similar. Until then...
+  - name: Check that a password file has been defined
+    ansible.builtin.stat:
+      path: "/root/restic/password"
+    register: restic_passwd
+
+  - name: Make restic area in /root
+    become: true
+    ansible.builtin.file:
+      state: directory
+      path: "/root/restic"
+      owner: root
+      group: root
+      mode: 0700
+
+  - name: Fail if password file isn't there
+    ansible.builtin.fail:
+      msg: "/root/restic/password doesn't exist; we need that."
+    when: not restic_passwd.stat.exists
+
+  - name: Ensure correct permissions on the password file
+    ansible.builtin.file:
+      path: "/root/restic/password"
+      state: "file"
+      owner: root
+      group: root
+      mode: 0600
+
+  - name: Install restic package
+    become: true
+    ansible.builtin.apt:
+      name:
+        - restic
+      state: latest   # noqa package-latest
+    register: restic_apt
+
+  - name: Update restic
+    become: true
+    ansible.builtin.command: /usr/bin/restic self-update
+    when: restic_apt.changed
+
+  - name: Create backup path
+    become: true
+    ansible.builtin.file:
+      state: directory
+      path: "{{ backup_path }}"
+      owner: root
+      group: root
+      mode: 0700
+
+  - name: Copy script into /root/restic
+    become: true
+    ansible.builtin.copy:
+      src: "{{ item.name }}"
+      dest: "/root/restic/{{ item.name }}"
+      owner: root
+      group: root
+      mode: "{{ item.mode }}"
+    loop:
+      - {name: "excludes", mode: 0644}
+      - {name: "restic_schedule.sh", mode: 0700}
+
+  - name: Install restic env
+    become: true
+    ansible.builtin.template:
+      src: "restic.env.j2"
+      dest: "/root/restic/restic.env"
+      owner: root
+      group: root
+      mode: 0600
+
+  # TODO: Not very flexible vs the env file / template
+  - name: Check if restic repo exists there already   # noqa no-changed-when
+    become: true
+    ansible.builtin.command: >
+      /usr/bin/restic check
+      --repo {{ backup_path }}/restic
+      --password-file /root/restic/password
+    register: restic_check
+
+  - name: Create the repo if it hasn't yet been created
+    become: true
+    ansible.builtin.command: >
+      /usr/bin/restic init
+      --repo {{ backup_path }}/restic
+      --password-file /root/restic/password
+    when: restic_check.rc != 0
+
+  - name: Install a line in the crontab
+    become: true
+    ansible.builtin.lineinfile:
+      path: /etc/cron.d/restic
+      owner: root
+      group: root
+      mode: 0644
+      line: "5 *    * * *   root    /root/restic/restic_schedule.sh"
+      create: true

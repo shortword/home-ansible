@@ -62,4 +62,9 @@
   roles:
     - nfs
 
+- hosts: restic
+  tags: restic
+  roles:
+    - restic
+
 # vim: ft=ansible

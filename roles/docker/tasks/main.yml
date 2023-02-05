@@ -1,0 +1,20 @@
+---
+- name: Docker |
+  block:
+  - name: Docker | Pull script
+    ansible.builtin.get_url:
+      url: "https://get.docker.com/"
+      dest: /tmp/docker_install.sh
+      mode: '0700'
+    register: docker_dl
+
+  - name: Docker | Run script
+    ansible.builtin.command: /bin/sh /tmp/docker_install.sh
+    when: docker_dl.status_code == 200
+    become: true
+
+  - name: Docker | Remove script
+    ansible.builtin.file:
+      path: /tmp/docker_install.sh
+      state: absent
+    when: docker_dl.status_code == 200

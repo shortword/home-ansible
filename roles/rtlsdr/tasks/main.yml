@@ -38,13 +38,16 @@
     block:
 
       - name: Create results / build dir
+        become: true
+        become_user: "{{ username }}"
         ansible.builtin.file:
           path: "/opt/rtl-sdr/build"
           state: directory
           mode: 0755
 
       - name: Build RTL-SDR (CMake)
-        become: false
+        become: true
+        become_user: "{{ username }}"
         when: rtlsdr_git.changed
         ansible.builtin.shell:
           chdir: "/opt/rtl-sdr/build"
@@ -54,7 +57,8 @@
             -DINSTALL_UDEV_RULES=ON
 
       - name: Build RTL-SDR (source code)
-        become: false
+        become: true
+        become_user: "{{ username }}"
         when: rtlsdr_git.changed
         community.general.make:
           chdir: "/opt/rtl-sdr/build"

@@ -8,6 +8,7 @@
         - build-essential
         - cmake
         - libusb-1.0-0-dev
+        - pkg-config
 
   # TODO: Pull /opt creation into a reusable task
   - name: Create opt if it doesn't exist

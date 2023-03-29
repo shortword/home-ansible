@@ -18,6 +18,11 @@
       state: latest   # noqa package-latest
       cache_valid_time: 3600
 
+  - name: Create group
+    ansible.builtin.group:
+      name: "{{ username }}"
+      state: present
+
   - name: Create / update user
     ansible.builtin.user:
       name: "{{ username }}"
